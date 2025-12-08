@@ -29,7 +29,7 @@
         <relativePath>org.apache:apache</relativePath>
     </parent>
 
-    <name>ActiveMQ Artemis Native</name>
+    <name>Apache Artemis Native</name>
     <url />
 
     <properties>
@@ -61,9 +61,9 @@
     </properties>
 
     <scm>
-        <connection>scm:git:https://gitbox.apache.org/repos/asf/activemq-artemis-native.git</connection>
-        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/activemq-artemis-native.git</developerConnection>
-        <url>https://github.com/apache/activemq-artemis-native</url>
+        <connection>scm:git:https://gitbox.apache.org/repos/asf/artemis-native.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/artemis-native.git</developerConnection>
+        <url>https://github.com/apache/artemis-native</url>
         <tag>HEAD</tag>
     </scm>
 
