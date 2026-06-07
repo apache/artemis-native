@@ -38,6 +38,7 @@
         <version.org.jacoco.plugin>0.8.6</version.org.jacoco.plugin>
         <surefire.version>2.22.2</surefire.version>
         <junit.version>4.13.2</junit.version>
+        <jmh.version>1.37</jmh.version>
         <maven.bundle.plugin.version>5.1.2</maven.bundle.plugin.version>
         <exec-maven-plugin.version>3.0.0</exec-maven-plugin.version>
         <maven-enforcer-plugin.version>3.0.0</maven-enforcer-plugin.version>
@@ -47,12 +48,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>22</maven.compiler.source>
+        <maven.compiler.target>22</maven.compiler.target>
+        <maven.compiler.release>22</maven.compiler.release>
 
         <activemq-surefire-argline>
-            -Dtest.stress.time=${test.stress.time} -Djava.library.path="${activemq.basedir}/target/lib/linux-${os.arch}"
+            -Dtest.stress.time=${test.stress.time} --enable-native-access=ALL-UNNAMED
         </activemq-surefire-argline>
         <activemq.basedir>${project.basedir}</activemq.basedir>
 
@@ -97,6 +98,30 @@
             <version>${junit.version}</version>
             <scope>test</scope>
             <!-- License: EPL 1.0 -->
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.10.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>${jmh.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>${jmh.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.jacoco</groupId>
@@ -271,7 +296,7 @@
                         <redirectTestOutputToFile>${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
                         <argLine>${activemq-surefire-argline}</argLine>
                         <systemPropertyVariables>
-                            <org.slf4j.simpleLogger.defaultLogLevel>TRACE</org.slf4j.simpleLogger.defaultLogLevel>
+                            <org.slf4j.simpleLogger.defaultLogLevel>INFO</org.slf4j.simpleLogger.defaultLogLevel>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>
@@ -363,8 +388,8 @@
                             <configuration>
                                 <rules>
                                     <requireJavaVersion>
-                                    <version>[11,)</version>
-                                    <message>You must use Java 11+ to build</message>
+                                    <version>[22,)</version>
+                                    <message>You must use Java 22+ to build (FFM API requirement)</message>
                                     </requireJavaVersion>
                                 </rules>
                             </configuration>
@@ -377,8 +402,8 @@
                             <configuration>
                                 <rules>
                                     <requireMavenVersion>
-                                    <version>3.5.0</version>
-                                    <message>You must use Maven 3.5.0+ to build</message>
+                                    <version>3.9.0</version>
+                                    <message>You must use Maven 3.9.0+ to build</message>
                                     </requireMavenVersion>
                                 </rules>
                             </configuration>
@@ -419,6 +444,15 @@
                         </configuration>
                     </execution>
                 </executions>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.openjdk.jmh</groupId>
+                            <artifactId>jmh-generator-annprocess</artifactId>
+                            <version>${jmh.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
             </plugin>
 
             <plugin>
@@ -427,8 +461,8 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                        <!-- Adding Bundle-NativeCode to allow loading library from bundle. The asterisk at the end is important, so bundle resolves also without a matching library, e.g. on Windows. -->
-                        <Bundle-NativeCode>lib/linux-i686/libartemis-native-32.so; osname=Linux; processor=x86, lib/linux-x86_64/libartemis-native-64.so; osname=Linux; processor=x86-64, *</Bundle-NativeCode>
+                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                        <Bundle-Version>${project.version}</Bundle-Version>
                     </instructions>
                 </configuration>
             </plugin>
@@ -439,129 +473,15 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>artemis.jni</Automatic-Module-Name>
+                            <Automatic-Module-Name>artemis.ffm</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-resources-i686</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/target/output/lib/linux-i686/</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>target/lib/linux-i686</directory>
-                                    <includes>
-                                        <include>libartemis-native-32.so</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-resources-x86_64</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/target/output/lib/linux-x86_64/</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>target/lib/linux-amd64</directory>
-                                    <includes>
-                                        <include>libartemis-native-64.so</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-resources-aarch64</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/target/output/lib/linux-aarch64/</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>target/lib/linux-aarch64</directory>
-                                    <includes>
-                                        <include>libartemis-native-64.so</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-resources-ppc64le</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/target/output/lib/linux-ppc64le/</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>target/lib/linux-ppc64le</directory>
-                                    <includes>
-                                        <include>libartemis-native-64.so</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-resources-s390x</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/target/output/lib/linux-s390x/</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>target/lib/linux-s390x</directory>
-                                    <includes>
-                                        <include>libartemis-native-64.so</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
             </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>source</id>
-                        <configuration>
-                            <descriptors>
-                               <descriptor>src/main/assembly/source.xml</descriptor>
-                            </descriptors>
-                            <tarLongFileMode>gnu</tarLongFileMode>
-                        </configuration>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
         </plugins>
     </build>
 
